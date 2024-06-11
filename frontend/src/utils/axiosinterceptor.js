@@ -1,24 +1,13 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const api = axios.create({
   baseURL: "http://localhost:5000",
 });
 
-const refreshAccessToken = async () => {
-  try {
-    const refreshToken = localStorage.getItem("refreshToken");
-    const response = await api.post("/auth/refresh", { refreshToken });
-    localStorage.setItem("accessToken", response.data.accessToken);
-    return response.data.accessToken;
-  } catch (error) {
-    console.error("Failed to refresh access token", error);
-    throw error;
-  }
-};
-
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,6 +20,10 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    if (response.data.statusCode === 401) {
+      Cookies.remove("accessToken");
+      window.location.href = "/";
+    }
     return response;
   },
   async (error) => {
@@ -38,12 +31,21 @@ api.interceptors.response.use(
 
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        const newToken = await refreshAccessToken();
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
-      } catch (err) {
-        console.error("Failed to refresh access token", err);
+      const refreshToken = Cookies.get("refreshToken");
+      if (refreshToken) {
+        try {
+          const response = await api.post("/auth/refresh", { refreshToken });
+          const newToken = response.data.accessToken;
+          Cookies.set("accessToken", newToken);
+          api.defaults.headers.common.authorization = `Bearer ${newToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return await api(originalRequest);
+        } catch (err) {
+          console.error("Failed to refresh access token", err);
+        }
+      } else {
+        Cookies.remove("accessToken");
+        window.location.href = "/";
       }
     }
 

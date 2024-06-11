@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import api from "../utils/axiosinterceptor";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,8 +14,8 @@ const Login = () => {
       const response = await api.post("/auth/login", { username, password });
       const { accessToken, refreshToken } = response.data;
 
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      Cookies.set("accessToken", accessToken);
+      Cookies.set("refreshToken", refreshToken);
 
       navigate("/home");
     } catch (error) {

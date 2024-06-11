@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../utils/axiosinterceptor";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 const Protected = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Protected = () => {
   }
 
   const handleClick = () => {
-    localStorage.clear();
+    Cookies.remove("accessToken");
     navigate("/");
   };
 
