@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { login, register } from "../actions/authActions";
 import { useNavigate } from "react-router-dom";
+import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,33 +21,34 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            Username:
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </label>
+    <div className="main">
+      <h2>Create Your Account</h2>
+      <form onSubmit={handleSubmit} className="form-container">
+        <div className="input-group">
+          <label>Username</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
         </div>
-        <div>
-          <label>
-            Password:
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
+        <div className="input-group">
+          <label>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </div>
-        <div>
-          <button onClick={() => setIsLoginMode(true)}>Login</button>
-          <button onClick={() => setIsLoginMode(false)}>Register</button>
+        <div className="btn-container">
+          <button className="btn" onClick={() => setIsLoginMode(true)}>
+            Login
+          </button>
+          <button className="btn" onClick={() => setIsLoginMode(false)}>
+            Register
+          </button>
         </div>
       </form>
     </div>

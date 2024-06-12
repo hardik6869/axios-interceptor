@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProtectedData } from "../actions/protectedDataActions";
 import Logout from "./Logout";
+import "./Protected.css";
 
 const Protected = () => {
   const navigate = useNavigate();
@@ -18,13 +19,14 @@ const Protected = () => {
   }
 
   return (
-    <div>
+    <div className="container">
       {data ? (
         <div>
-          <h1>Protected Data</h1>
-
-          <h1>Welcome, {data.username}!</h1>
-          <p>{data.data}</p>
+          <h1 className="title">Welcome, {data.username}!</h1>
+          <p className="content">
+            {data.message} & protected page. Only authenticated users can access
+            it
+          </p>
 
           <Logout />
         </div>
