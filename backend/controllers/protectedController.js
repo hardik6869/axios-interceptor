@@ -1,4 +1,4 @@
 exports.getProtectedData = (req, res) => {
-  const { username } = req.user;
-  res.json({ message: "This is protected data", username });
+  const { username, id } = req.user;
+  res.json({ message: "This is protected data", username, id });
 };

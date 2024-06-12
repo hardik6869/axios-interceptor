@@ -31,10 +31,16 @@ export const register = (username, password, navigate) => async (dispatch) => {
   }
 };
 
-export const logout = (navigate) => (dispatch) => {
-  Cookies.remove("accessToken");
-  Cookies.remove("refreshToken");
-  dispatch(setUser(null));
-  navigate("/");
-  toast.info("Logged out");
+export const logout = (navigate) => async (dispatch, getState) => {
+  try {
+    const { protectedData } = getState();
+    await api.post("/auth/logout", { userId: protectedData.data.id });
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
+    dispatch(setUser(null));
+    navigate("/");
+    toast.info("Logged out");
+  } catch (error) {
+    toast.error("Logout error:", error);
+  }
 };
