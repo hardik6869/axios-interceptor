@@ -1,4 +1,4 @@
 exports.getProtectedData = (req, res) => {
-  const username = req.userId; // Access the username from the decoded JWT token
-  res.json({ username, data: "This is protected data" });
+  const { username } = req.user;
+  res.json({ message: "This is protected data", username });
 };

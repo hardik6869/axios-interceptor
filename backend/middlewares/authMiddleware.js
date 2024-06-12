@@ -1,22 +1,15 @@
 const jwt = require("jsonwebtoken");
-const SECRET_KEY = "your_jwt_secret_key";
+const { SECRET_KEY } = require("../config/config");
 
 exports.verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) {
-    return res.status(403).json({ message: "No token provided" });
-  }
+  if (!token) return res.sendStatus(401); // Unauthorized
 
-  const tokenPart = token.split(" ")[1];
-
-  jwt.verify(tokenPart, SECRET_KEY, (err, decoded) => {
-    if (err) {
-      console.error("Token verification error:", err); // Log the error for debugging
-      return res.status(500).json({ message: "Failed to authenticate token" });
-    }
-
-    req.userId = decoded.username;
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.sendStatus(403); // Forbidden
+    req.user = user;
     next();
   });
 };

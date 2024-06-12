@@ -1,22 +1,26 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
 const protectedRoutes = require("./routes/protectedRoutes");
 
-const cors = require("cors"); // Import CORS middleware
-require("dotenv").config();
+const cors = require("cors");
 const app = express();
+const { MONGO_URI, PORT, ORIGIN } = require("./config/config");
 
-// Use CORS middleware
-app.use(cors({ credentials: true, origin: process.env.ORIGIN }));
+// CORS middleware
+app.use(cors({ credentials: true, origin: ORIGIN }));
 
 app.use(bodyParser.json());
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/protected", protectedRoutes);
 
-app.listen(process.env.PORT, () => {
-  console.log(
-    `Server is running on http://localhost:${process.env.PORT || 5000}`
-  );
-});
+// Database connection
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    app.listen(PORT || 5000);
+    console.log("Database is Connected! Listening to localhost 5000.");
+  })
+  .catch((error) => console.error("MongoDB connection error:", error));

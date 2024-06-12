@@ -1,70 +1,126 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const {
+  SECRET_KEY,
+  REFRESH_SECRET_KEY,
+  TOKEN_EXPIRATION,
+  REFRESH_TOKEN_EXPIRATION,
+} = require("../config/config");
+const User = require("../models/User");
 
-const users = [
-  {
-    username: "hardik",
-    password: "Hardik@123",
-  },
-  {
-    username: "admin",
-    password: "admin@123",
-  },
-]; // This should be replaced with a database in a real application
+// Register a new user
+exports.register = async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-const SECRET_KEY = "your_jwt_secret_key";
-const REFRESH_SECRET_KEY = "your_refresh_jwt_secret_key";
-
-exports.login = (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find((u) => u.username === username);
-
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
-  }
-
-  const isPasswordValid = bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(400).json({ message: "Invalid password" });
-  }
-
-  const accessToken = jwt.sign({ username: user.username }, SECRET_KEY, {
-    expiresIn: "15m",
-  });
-  const refreshToken = jwt.sign(
-    { username: user.username },
-    REFRESH_SECRET_KEY,
-    { expiresIn: "7d" }
-  );
-
-  res.json({ accessToken, refreshToken });
-};
-
-exports.register = (req, res) => {
-  const { username, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 8);
-
-  users.push({ username, password: hashedPassword });
-
-  res.status(201).json({ message: "User registered successfully" });
-};
-
-exports.refreshToken = (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (!refreshToken) {
-    return res.status(400).json({ message: "Refresh token is required" });
-  }
-
-  jwt.verify(refreshToken, REFRESH_SECRET_KEY, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: "Invalid refresh token" });
+    // Check if the user already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    const newAccessToken = jwt.sign({ username: user.username }, SECRET_KEY, {
-      expiresIn: "15m",
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user
+    const newUser = new User({
+      username,
+      password: hashedPassword,
     });
 
-    res.json({ accessToken: newAccessToken });
-  });
+    await newUser.save();
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//  Login a user
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Find the user
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Generate tokens
+    const accessToken = jwt.sign(
+      { username: user.username, id: user._id },
+      SECRET_KEY,
+      { expiresIn: TOKEN_EXPIRATION }
+    );
+    const refreshToken = jwt.sign(
+      { username: user.username, id: user._id },
+      REFRESH_SECRET_KEY,
+      { expiresIn: REFRESH_TOKEN_EXPIRATION }
+    );
+
+    // Save refresh token to database
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.json({ accessToken, refreshToken });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Refresh access token
+exports.refreshToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(401).json({ message: "Refresh token required" });
+    }
+
+    // Verify the refresh token
+    jwt.verify(token, REFRESH_SECRET_KEY, async (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ message: "Invalid refresh token" });
+      }
+
+      const user = await User.findById(decoded.id);
+      if (!user || user.refreshToken !== token) {
+        return res.status(403).json({ message: "Invalid refresh token" });
+      }
+
+      const newAccessToken = jwt.sign(
+        { username: user.username, id: user._id },
+        SECRET_KEY,
+        { expiresIn: TOKEN_EXPIRATION }
+      );
+
+      res.json({ accessToken: newAccessToken });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//  Logout a user
+exports.logout = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Remove refresh token from database
+    await User.findByIdAndUpdate(userId, { $unset: { refreshToken: "" } });
+
+    res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
