@@ -1,5 +1,8 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import { setupRefreshToken } from "./apiPaths";
+import store from "../store";
+import { logout } from "../actions/authActions";
 
 const api = axios.create({
   baseURL: "http://localhost:5000",
@@ -21,8 +24,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     if (response.data.statusCode === 401) {
-      Cookies.remove("accessToken");
-      window.location.href = "/";
+      store.dispatch(logout());
     }
     return response;
   },
@@ -32,20 +34,19 @@ api.interceptors.response.use(
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = Cookies.get("refreshToken");
-      if (refreshToken) {
-        try {
-          const response = await api.post("/auth/refresh", { refreshToken });
-          const newToken = response.data.accessToken;
-          Cookies.set("accessToken", newToken);
-          api.defaults.headers.common.authorization = `Bearer ${newToken}`;
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return await api(originalRequest);
-        } catch (err) {
-          console.error("Failed to refresh access token", err);
-        }
-      } else {
-        Cookies.remove("accessToken");
-        window.location.href = "/";
+      if (!refreshToken) {
+        store.dispatch(logout());
+        return Promise.reject(error);
+      }
+      try {
+        const response = await api.post(setupRefreshToken, { refreshToken });
+        const newToken = response.data.accessToken;
+        Cookies.set("accessToken", newToken);
+        api.defaults.headers.common.authorization = `Bearer ${newToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return await api(originalRequest);
+      } catch (err) {
+        console.error("Failed to refresh access token", err);
       }
     }
 

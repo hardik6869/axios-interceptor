@@ -1,54 +1,54 @@
-// src/components/Login.js
 import React, { useState } from "react";
-import api from "../utils/axiosinterceptor";
+import { useDispatch } from "react-redux";
+import { login, register } from "../actions/authActions";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [isLoginMode, setIsLoginMode] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
 
-  const handleLogin = async () => {
-    try {
-      const response = await api.post("/auth/login", { username, password });
-      const { accessToken, refreshToken } = response.data;
-
-      Cookies.set("accessToken", accessToken);
-      Cookies.set("refreshToken", refreshToken);
-
-      navigate("/home");
-    } catch (error) {
-      console.error("Login failed", error.response?.data.message);
-    }
-  };
-
-  const handleRegister = async () => {
-    try {
-      await api.post("/auth/register", { username, password });
-      handleLogin();
-    } catch (error) {
-      console.error("Registration failed", error.response?.data.message);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (isLoginMode) {
+      dispatch(login(username, password, navigate));
+    } else {
+      dispatch(register(username, password, navigate));
     }
   };
 
   return (
     <div>
-      <h1>Login</h1>
-      <input
-        type="text"
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={handleLogin}>Login</button>
-      <button onClick={handleRegister}>Register</button>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>
+            Username:
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            Password:
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </label>
+        </div>
+        <div>
+          <button onClick={() => setIsLoginMode(true)}>Login</button>
+          <button onClick={() => setIsLoginMode(false)}>Register</button>
+        </div>
+      </form>
     </div>
   );
 };
