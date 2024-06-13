@@ -80,9 +80,10 @@ exports.login = async (req, res) => {
 exports.refreshToken = async (req, res) => {
   try {
     const { token } = req.body;
-
     if (!token) {
-      return res.status(401).json({ message: "Refresh token required" });
+      return res
+        .status(401)
+        .json({ message: "Request failed with status code 401" });
     }
 
     // Verify the refresh token

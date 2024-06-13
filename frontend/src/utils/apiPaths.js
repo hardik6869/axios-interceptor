@@ -4,3 +4,4 @@ export const setupRefreshToken = `${process.env.REACT_APP_BASE_URL}/auth/refresh
 export const setupUserLogout = `${process.env.REACT_APP_BASE_URL}/auth/logout`;
 
 export const setupUsers = `${process.env.REACT_APP_BASE_URL}/protected/data`;
+export const setupGetAllUsers = `${process.env.REACT_APP_BASE_URL}/protected/users`;

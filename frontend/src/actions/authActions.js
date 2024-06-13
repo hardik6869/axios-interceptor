@@ -1,5 +1,9 @@
 import { toast } from "react-toastify";
-import { setupLoginUser, setupSinupUser } from "../utils/apiPaths";
+import {
+  setupLoginUser,
+  setupSinupUser,
+  setupUserLogout,
+} from "../utils/apiPaths";
 import api from "../utils/axiosinterceptor";
 import { SET_USER } from "./types";
 import Cookies from "js-cookie";
@@ -34,7 +38,7 @@ export const register = (username, password, navigate) => async (dispatch) => {
 export const logout = (navigate) => async (dispatch, getState) => {
   try {
     const { protectedData } = getState();
-    await api.post("/auth/logout", { userId: protectedData.data.id });
+    await api.post(setupUserLogout, { userId: protectedData.data.id });
     Cookies.remove("accessToken");
     Cookies.remove("refreshToken");
     dispatch(setUser(null));

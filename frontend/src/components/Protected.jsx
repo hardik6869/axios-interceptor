@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchProtectedData } from "../actions/protectedDataActions";
 import Logout from "./Logout";
 import "./Protected.css";
+import UsersList from "./UsersList";
 
 const Protected = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const Protected = () => {
             {data.message} & protected page. Only authenticated users can access
             it
           </p>
-
+          <UsersList />
           <Logout />
         </div>
       ) : (

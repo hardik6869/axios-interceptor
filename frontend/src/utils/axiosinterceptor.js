@@ -5,7 +5,7 @@ import store from "../store";
 import { logout } from "../actions/authActions";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: process.env.REACT_APP_BASE_URL,
 });
 
 api.interceptors.request.use(
@@ -23,15 +23,19 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    if (response.data.statusCode === 401) {
+    if (response.data.status === 401) {
       store.dispatch(logout());
     }
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
-
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response.status === 401 ||
+      error.response.status === "401" ||
+      (error.message === "Request failed with status code 401" &&
+        !originalRequest._retry)
+    ) {
       originalRequest._retry = true;
       const refreshToken = Cookies.get("refreshToken");
       if (!refreshToken) {
@@ -39,7 +43,9 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
       try {
-        const response = await api.post(setupRefreshToken, { refreshToken });
+        const response = await api.post(setupRefreshToken, {
+          token: refreshToken,
+        });
         const newToken = response.data.accessToken;
         Cookies.set("accessToken", newToken);
         api.defaults.headers.common.authorization = `Bearer ${newToken}`;
